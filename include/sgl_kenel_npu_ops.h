@@ -15,12 +15,17 @@ namespace sglang {
 namespace npu_kernel {
 at::Tensor helloworld(const at::Tensor &x, const at::Tensor &y);
 
-at::Tensor cache_loc_assign(const at::Tensor &req_indices, const at::Tensor &token_pool,
-    const at::Tensor &start_offset, const at::Tensor &end_offset, const at::Tensor &out_cache_loc);
+at::Tensor cache_loc_assign(const at::Tensor &req_indices,
+                            const at::Tensor &token_pool,
+                            const at::Tensor &start_offset,
+                            const at::Tensor &end_offset,
+                            const at::Tensor &out_cache_loc);
 
-bool RunCustomAssign(at::Tensor &dstTensor, const at::Tensor &srcTensor, const at::Tensor &dstStartIdx,
-    const at::Tensor &dstEndIdx, const at::Tensor &srcStartIdx, const at::Tensor &srcEndIdx);
-}  // namespace npu_kernel
-}  // namespace sglang
+bool RunCustomAssign(at::Tensor &dstTensor, const at::Tensor &srcTensor,
+                     const at::Tensor &dstStartIdx, const at::Tensor &dstEndIdx,
+                     const at::Tensor &srcStartIdx,
+                     const at::Tensor &srcEndIdx);
+} // namespace npu_kernel
+} // namespace sglang
 
-#endif  // SGL_KERNEL_NPU_OPS_H
+#endif // SGL_KERNEL_NPU_OPS_H
