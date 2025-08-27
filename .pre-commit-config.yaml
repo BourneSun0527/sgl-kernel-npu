@@ -40,7 +40,7 @@ repos:
       - id: codespell
         args:
           - -L
-          - cann,ND,tbe,CopyIn,EnQue,ot
+          - cann,ND,tbe,CopyIn,EnQue,ot,ArchType
           - --ignore-regex
           - '\b(te|hel|ans|als|childs|vas|hsa|ment)\b'
           - --skip
