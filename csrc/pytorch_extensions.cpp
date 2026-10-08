@@ -248,6 +248,36 @@ TORCH_LIBRARY_FRAGMENT(npu, m)
         "ScalarType? dst_type=None, int quant_mode=1, int group_size=128, bool round_scale=False, "
         "bool ue8m0_scale=False, bool output_origin=False, int group_list_type=0, "
         "float clamp_value=0.0) -> (Tensor, Tensor, Tensor)");
+
+    // kv_quant sparse attention pair (A5 / ascend950, FP8 KV cache).
+    // Main op (kv_quant_sparse_attn_sharedkv) registration disabled until the arch35
+    // SCFA kernel is ported to the ascendc_library build model; only the metadata op
+    // below is wired (pure-host, builds cleanly).
+#if 0
+    m.def(
+        "kv_quant_sparse_attn_sharedkv(Tensor q, int kv_quant_mode, *, "
+        "Tensor? ori_kv=None, Tensor? cmp_kv=None, "
+        "Tensor? ori_sparse_indices=None, Tensor? cmp_sparse_indices=None, "
+        "Tensor? ori_block_table=None, Tensor? cmp_block_table=None, "
+        "Tensor? cu_seqlens_q=None, Tensor? cu_seqlens_ori_kv=None, "
+        "Tensor? cu_seqlens_cmp_kv=None, Tensor? seqused_q=None, Tensor? seqused_kv=None, "
+        "Tensor? sinks=None, Tensor? metadata=None, "
+        "int tile_size=64, int rope_head_dim=64, float softmax_scale=0, int cmp_ratio=0, "
+        "int ori_mask_mode=4, int cmp_mask_mode=3, int ori_win_left=127, int ori_win_right=0, "
+        "str layout_q='BSND', str layout_kv='PA_ND', "
+        "bool return_softmax_lse=False) -> (Tensor, Tensor)");
+#endif
+    m.def(
+        "kv_quant_sparse_attn_sharedkv_metadata_host("
+        "int num_heads_q, int num_heads_kv, int head_dim, int kv_quant_mode, "
+        "Tensor? cu_seqlens_q=None, Tensor? cu_seqlens_ori_kv=None, "
+        "Tensor? cu_seqlens_cmp_kv=None, Tensor? seqused_q=None, Tensor? seqused_kv=None, "
+        "int batch_size=0, int max_seqlen_q=0, int max_seqlen_kv=0, "
+        "int ori_topk=0, int cmp_topk=0, int tile_size=64, int rope_head_dim=64, "
+        "int cmp_ratio=-1, int ori_mask_mode=4, int cmp_mask_mode=3, "
+        "int ori_win_left=127, int ori_win_right=0, "
+        "str layout_q='BSND', str layout_kv='PA_ND', "
+        "bool has_ori_kv=True, bool has_cmp_kv=True) -> Tensor");
 #endif
 
 #ifdef BUILD_CATLASS_MODULE
@@ -397,6 +427,12 @@ TORCH_LIBRARY_IMPL(npu, PrivateUse1, m)
     // The host takes c10::optional directly, so the optionals are registered as-is rather than
     // being unwrapped to empty tensors here.
     m.impl("swiglu_group_quant", TORCH_FN(sglang::npu_kernel::swiglu_group_quant));
+
+    // Main kv_quant attention op impl disabled until arch35 kernel port.
+#if 0
+    m.impl("kv_quant_sparse_attn_sharedkv",
+           TORCH_FN(sglang::npu_kernel::kv_quant_sparse_attn_sharedkv));
+#endif
 #endif
 
 #ifdef BUILD_CATLASS_MODULE
@@ -416,5 +452,9 @@ namespace {
 TORCH_LIBRARY_IMPL(npu, CPU, m)
 {
     m.impl("sparse_attn_sharedkv_metadata_host", TORCH_FN(sglang::npu_kernel::sparse_attn_sharedkv_metadata_host));
+#ifdef SGL_KERNEL_ENABLE_A5_ONLY_OPS
+    m.impl("kv_quant_sparse_attn_sharedkv_metadata_host",
+           TORCH_FN(sglang::npu_kernel::kv_quant_sparse_attn_sharedkv_metadata_host));
+#endif
 }
 }  // namespace

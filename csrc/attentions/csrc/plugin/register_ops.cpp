@@ -17,6 +17,7 @@
 #include "ada_block_sparse_attention.h"
 #include "sparse_block_estimate.h"
 #include "layernorm.h"
+#include "kv_quant_sparse_attn_sharedkv.h"
 
 TORCH_LIBRARY(attentions, m)
 {
@@ -51,6 +52,18 @@ TORCH_LIBRARY(attentions, m)
     m.def(
         "layernorm(Tensor input, int[] normalized_shape, Tensor? weight=None, Tensor? bias=None, float eps=1e-05, \
         int impl_mode=0) -> (Tensor, Tensor, Tensor)");
+    m.def(
+        "kv_quant_sparse_attn_sharedkv(Tensor q, int kv_quant_mode, *, "
+        "Tensor? ori_kv=None, Tensor? cmp_kv=None, "
+        "Tensor? ori_sparse_indices=None, Tensor? cmp_sparse_indices=None, "
+        "Tensor? ori_block_table=None, Tensor? cmp_block_table=None, "
+        "Tensor? cu_seqlens_q=None, Tensor? cu_seqlens_ori_kv=None, "
+        "Tensor? cu_seqlens_cmp_kv=None, Tensor? seqused_q=None, Tensor? seqused_kv=None, "
+        "Tensor? sinks=None, Tensor? metadata=None, "
+        "int tile_size=64, int rope_head_dim=64, float softmax_scale=0, int cmp_ratio=0, "
+        "int ori_mask_mode=4, int cmp_mask_mode=3, int ori_win_left=127, int ori_win_right=0, "
+        "str layout_q='BSND', str layout_kv='PA_ND', "
+        "bool return_softmax_lse=False) -> (Tensor, Tensor)");
 }
 
 TORCH_LIBRARY_IMPL(attentions, PrivateUse1, m)
@@ -60,4 +73,5 @@ TORCH_LIBRARY_IMPL(attentions, PrivateUse1, m)
     m.impl("ada_block_sparse_attention", &ada_block_sparse_attention);
     m.impl("sparse_block_estimate", &sparse_block_estimate);
     m.impl("layernorm", &layernorm_npu);
+    m.impl("kv_quant_sparse_attn_sharedkv", &kv_quant_sparse_attn_sharedkv);
 }

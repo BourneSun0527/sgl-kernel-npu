@@ -1,0 +1,59 @@
+Add quant attention ops
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# Date:      Thu Oct 8 16:49:49 2026 +0800
+#
+# On branch main
+# Your branch is ahead of 'origin/main' by 1 commit.
+#   (use "git push" to publish your local commits)
+#
+# Changes to be committed:
+#	modified:   csrc/CMakeLists.txt
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_host/CMakeLists.txt.orig
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_host/kv_quant_sparse_attn_sharedkv.cpp
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_host/kv_quant_sparse_attn_sharedkv_check.cpp.orig
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_host/kv_quant_sparse_attn_sharedkv_check.h.orig
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_host/kv_quant_sparse_attn_sharedkv_check_consistancy.cpp.orig
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_host/kv_quant_sparse_attn_sharedkv_check_existance.cpp.orig
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_host/kv_quant_sparse_attn_sharedkv_check_feature.cpp.orig
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_host/kv_quant_sparse_attn_sharedkv_check_single_para.cpp.orig
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_host/kv_quant_sparse_attn_sharedkv_def.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_host/kv_quant_sparse_attn_sharedkv_tiling.cpp.orig
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_host/kv_quant_sparse_attn_sharedkv_tiling.h.orig
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_host/kv_quant_sparse_attn_sharedkv_tiling_data.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/common/CopyInL1.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/common/FixpipeOut.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/common/buffer.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/common/buffer_manager.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/common/buffers_policy.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/common/matmul.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/common/offset_calculator.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/kv_quant_sparse_attn_sharedkv_common_arch35.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/kv_quant_sparse_attn_sharedkv_kvcache.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/kv_quant_sparse_attn_sharedkv_scfa_block_cube.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/kv_quant_sparse_attn_sharedkv_scfa_block_vector.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/kv_quant_sparse_attn_sharedkv_scfa_kernel.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/util_regbase.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/vf/vf_basic_block_aligned128_no_update_scfa.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/vf/vf_basic_block_aligned128_update_scfa.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/vf/vf_basic_block_unaligned128_no_update_scfa.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/vf/vf_basic_block_unaligned128_update_scfa.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/vf/vf_basic_block_unaligned64_no_update_scfa.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/vf/vf_basic_block_unaligned64_update_scfa.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/vf/vf_basic_block_utils.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/vf/vf_flashupdate_new_scfa.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/arch35/vf/vf_mul_sel_softmaxflashv2_cast_nz_scfa.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/kv_quant_sparse_attn_sharedkv.cpp
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/kv_quant_sparse_attn_sharedkv_common.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/kv_quant_sparse_attn_sharedkv_metadata.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv/op_kernel/kv_quant_sparse_attn_sharedkv_template_tiling_key.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv_metadata/op_host/kv_quant_sparse_attn_sharedkv_metadata.cpp
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv_metadata/op_host/kv_quant_sparse_attn_sharedkv_metadata.h
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv_metadata/op_host/kv_quant_sparse_attn_sharedkv_metadata_aicpu.cpp.orig
+#	new file:   csrc/kv_quant_sparse_attn_sharedkv_metadata/op_host/kv_quant_sparse_attn_sharedkv_metadata_aicpu.h.orig
+#	modified:   csrc/pytorch_extensions.cpp
+#	modified:   include/sgl_kenel_npu_ops.h
+#	new file:   tests/python/sgl_kernel_npu/test_kv_quant_sparse_attn_sharedkv.py
+#

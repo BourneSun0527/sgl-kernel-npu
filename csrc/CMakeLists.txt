@@ -110,6 +110,12 @@ if(SGL_KERNEL_ENABLE_A5_ONLY_OPS)
         ${PROJECT_OP_SRC_BASE}/kv_compress_epilog/op_host/kv_compress_epilog.cpp
         ${PROJECT_OP_SRC_BASE}/situ_mxfp8_quant/op_host/situ_mxfp8_quant.cpp
         ${PROJECT_OP_SRC_BASE}/swiglu_group_quant/op_host/swiglu_group_quant.cpp
+        # Main op host binding disabled: the vendored arch35 SCFA kernel needs porting
+        # to the ascendc_library build model (TilingKey framework host validation +
+        # internal MicroAPI do not fit the host_bisheng_obj pass). Re-enable after the
+        # arch35 kernel port. Metadata op (below) is pure-host and unaffected.
+        # ${PROJECT_OP_SRC_BASE}/kv_quant_sparse_attn_sharedkv/op_host/kv_quant_sparse_attn_sharedkv.cpp
+        ${PROJECT_OP_SRC_BASE}/kv_quant_sparse_attn_sharedkv_metadata/op_host/kv_quant_sparse_attn_sharedkv_metadata.cpp
     )
 endif()
 if(BUILD_CATLASS_MODULE)
@@ -326,6 +332,34 @@ if(SGL_KERNEL_ENABLE_A3_ONLY_OPS)
 
 endif()
 
+# A5-only kernel targets (Ascend950). The kv_quant SCFA kernel manages
+# cross-pipe synchronization manually (matching vllm-ascend's aclnn build), so
+# it gets --cce-auto-sync=off like sparse_attn_sharedkv_kernel.
+set(SGL_A5_ONLY_KERNEL_TARGETS)
+# A5 kv_quant SCFA kernel target disabled until the arch35 device code is ported to
+# the ascendc_library build model (see note in the A5 OP_SRCS block above).
+if(SGL_KERNEL_ENABLE_A5_ONLY_OPS AND FALSE)
+    ascendc_library(kv_quant_sparse_attn_sharedkv_kernel STATIC
+        ${PROJECT_OP_SRC_BASE}/kv_quant_sparse_attn_sharedkv/op_kernel/kv_quant_sparse_attn_sharedkv.cpp
+    )
+    ascendc_include_directories(kv_quant_sparse_attn_sharedkv_kernel PRIVATE
+        ${PROJECT_OP_SRC_BASE}/kv_quant_sparse_attn_sharedkv/op_kernel
+        ${PROJECT_OP_SRC_BASE}/kv_quant_sparse_attn_sharedkv/op_host
+        ${PROJECT_OP_SRC_BASE}/utils/kernel
+    )
+    ascendc_compile_definitions(kv_quant_sparse_attn_sharedkv_kernel PRIVATE
+        -DHAVE_WORKSPACE
+        -DHAVE_TILING
+    )
+    ascendc_compile_options(kv_quant_sparse_attn_sharedkv_kernel PRIVATE
+        --cce-auto-sync=off
+        -Wno-deprecated-declarations
+        -mllvm
+        -cce-vf-remove-membar=false
+    )
+    list(APPEND SGL_A5_ONLY_KERNEL_TARGETS kv_quant_sparse_attn_sharedkv_kernel)
+endif()
+
 # Sparse Flash Attention has arch22 (A2/A3) and arch35 (A5) implementations.
 ascendc_library(sparse_flash_attention_kernel STATIC
     ${PROJECT_OP_SRC_BASE}/sparse_flash_attention/op_kernel/sparse_flash_attention.cpp
@@ -354,6 +388,7 @@ add_library(${OP_PLUGIN_NAME} SHARED ${OP_SRCS})
 
 target_link_libraries(${OP_PLUGIN_NAME} PRIVATE
         ${A3_ONLY_KERNEL_TARGETS}
+        ${SGL_A5_ONLY_KERNEL_TARGETS}
         sparse_flash_attention_kernel
         workspace_kernel
         no_workspace_kernel
@@ -387,6 +422,7 @@ target_include_directories(${OP_PLUGIN_NAME} PRIVATE
         ${PROJECT_OP_SRC_BASE}/causal_conv1d/op_host
         ${PROJECT_OP_SRC_BASE}/sparsity_driven_kv_offload/shm_allocator
         ${PROJECT_OP_SRC_BASE}/sparse_attn_sharedkv/op_host
+        ${PROJECT_OP_SRC_BASE}/kv_quant_sparse_attn_sharedkv/op_host
         ${PROJECT_OP_SRC_BASE}/sparse_flash_attention/op_host
         ${PROJECT_OP_SRC_BASE}/sparse_flash_attention/op_host/tiling
         ${PROJECT_OP_SRC_BASE}/sparse_attention_score/op_host
@@ -405,3 +441,25 @@ target_include_directories(${OP_PLUGIN_NAME} PRIVATE
         ${ASCEND_DRIVER_PATH}/include
         ${ASCEND_DRIVER_PATH}/kernel/inc
 )
+
+# Dev-only fast-iteration target: compiles ONLY the kv_quant metadata op host source
+# as a standalone object, without building the rest of sgl_kernel_npu. Use to verify
+# metadata edits compile in seconds:
+#   cmake --build build --target kv_quant_meta_check -j16
+# Does NOT link or register the op -- the full sgl_kernel_npu target is still needed
+# to produce the loadable .so (and must build for the op to be callable).
+add_library(kv_quant_meta_check OBJECT
+    ${PROJECT_OP_SRC_BASE}/kv_quant_sparse_attn_sharedkv_metadata/op_host/kv_quant_sparse_attn_sharedkv_metadata.cpp
+)
+target_include_directories(kv_quant_meta_check PRIVATE
+        ${PROJECT_OP_SRC_BASE}/kv_quant_sparse_attn_sharedkv_metadata/op_host
+        ${PROJECT_OP_SRC_BASE}/utils
+        ${PROJECT_SOURCE_DIR}/include
+        ${ASCEND_INCLUDE_DIR}
+        ${ASCEND_INCLUDE_DIR}/external
+        ${ASCEND_DRIVER_PATH}/include
+        ${TORCH_DIR}/include
+        ${TORCH_DIR}/include/torch/csrc/api/include
+        ${TORCH_NPU_DIR}/include
+)
+target_compile_options(kv_quant_meta_check PRIVATE -fopenmp)

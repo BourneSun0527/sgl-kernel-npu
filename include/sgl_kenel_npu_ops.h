@@ -244,6 +244,52 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> swiglu_group_quant(
     c10::optional<at::ScalarType> dst_type, int64_t quant_mode,
     int64_t group_size, bool round_scale, bool ue8m0_scale, bool output_origin,
     int64_t group_list_type, double clamp_value);
+
+// kv_quant sparse attention (A5 / ascend950, FP8 KV cache). Ported from
+// vllm-ascend's npu_kv_quant_sparse_attn_sharedkv[_metadata]; the AICore SCFA
+// kernel + arch35 device headers are vendored under csrc/kv_quant_sparse_attn_sharedkv.
+//
+// Main op declaration disabled until the arch35 SCFA kernel is ported to the
+// ascendc_library build model (TilingKey host validation + internal MicroAPI do not
+// fit the host_bisheng_obj pass). The metadata op below is pure-host and active.
+#if 0
+std::tuple<at::Tensor, at::Tensor> kv_quant_sparse_attn_sharedkv(
+    const at::Tensor &q, int64_t kv_quant_mode,
+    const c10::optional<at::Tensor> &ori_kv,
+    const c10::optional<at::Tensor> &cmp_kv,
+    const c10::optional<at::Tensor> &ori_sparse_indices,
+    const c10::optional<at::Tensor> &cmp_sparse_indices,
+    const c10::optional<at::Tensor> &ori_block_table,
+    const c10::optional<at::Tensor> &cmp_block_table,
+    const c10::optional<at::Tensor> &cu_seqlens_q,
+    const c10::optional<at::Tensor> &cu_seqlens_ori_kv,
+    const c10::optional<at::Tensor> &cu_seqlens_cmp_kv,
+    const c10::optional<at::Tensor> &seqused_q,
+    const c10::optional<at::Tensor> &seqused_kv,
+    const c10::optional<at::Tensor> &sinks,
+    const c10::optional<at::Tensor> &metadata, int64_t tile_size,
+    int64_t rope_head_dim, double softmax_scale, int64_t cmp_ratio,
+    int64_t ori_mask_mode, int64_t cmp_mask_mode, int64_t ori_win_left,
+    int64_t ori_win_right, c10::string_view layout_q,
+    c10::string_view layout_kv, bool return_softmax_lse);
+#endif
+
+// Host-side (CPU) core-distribution scheduler for the kv_quant sparse attention.
+// Produces the int32[1024] metadata table consumed by the AICore op above.
+at::Tensor kv_quant_sparse_attn_sharedkv_metadata_host(
+    int64_t num_heads_q, int64_t num_heads_kv, int64_t head_dim,
+    int64_t kv_quant_mode,
+    const c10::optional<at::Tensor> &cu_seqlens_q,
+    const c10::optional<at::Tensor> &cu_seqlens_ori_kv,
+    const c10::optional<at::Tensor> &cu_seqlens_cmp_kv,
+    const c10::optional<at::Tensor> &seqused_q,
+    const c10::optional<at::Tensor> &seqused_kv, int64_t batch_size,
+    int64_t max_seqlen_q, int64_t max_seqlen_kv, int64_t ori_topk,
+    int64_t cmp_topk, int64_t tile_size, int64_t rope_head_dim,
+    int64_t cmp_ratio, int64_t ori_mask_mode, int64_t cmp_mask_mode,
+    int64_t ori_win_left, int64_t ori_win_right,
+    c10::string_view layout_q, c10::string_view layout_kv,
+    bool has_ori_kv, bool has_cmp_kv);
 #endif
 
 #ifdef BUILD_CATLASS_MODULE
